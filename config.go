@@ -10,16 +10,21 @@ import (
 
 type singleton struct {
 	data map[string]interface{}
+	path string
 }
 
-var configInstasnce *singleton
+var configInstance *singleton
 var once sync.Once
 
 func GetInstance() *singleton {
 	once.Do(func() {
-		configInstasnce = &singleton{}
+		configInstance = &singleton{}
 	})
-	return configInstasnce
+	return configInstance
+}
+
+func (s *singleton) SetPath(path string) {
+	s.path = path
 }
 
 func (s *singleton) Init() error {
@@ -28,12 +33,22 @@ func (s *singleton) Init() error {
 		return nil
 	}
 
-	args := os.Args
-	if len(args) < 2 {
+	var path string
+	if s.path != "" {
+		path = s.path
+	} else {
+		args := os.Args
+		if len(args) < 2 {
+			return errors.New("Config file is required")
+		}
+		path = args[1]
+	}
+
+	if path == "" {
 		return errors.New("Config file is required")
 	}
 
-	data, read_err := ioutil.ReadFile(args[1])
+	data, read_err := ioutil.ReadFile(path)
 
 	if read_err != nil {
 		return read_err
